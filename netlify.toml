@@ -1,0 +1,8 @@
+# Netlify 部署配置（与 gongdan-vercel 一致：只发布静态文件，api/ 与 supabase/ 不公开）
+
+[build]
+  command = "node scripts/build.mjs"
+  publish = "dist"
+
+[functions]
+  directory = "netlify/functions"

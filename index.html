@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>施工单 Pro · 云端系统</title>
+
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#7c3aed">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="施工单Pro">
+    <link rel="apple-touch-icon" href="icon.svg">
+
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://umatcwaodotqpttbuwew.supabase.co; base-uri 'none'; object-src 'none'; form-action 'self'">
+
+    <link rel="stylesheet" href="assets/styles.css">
+    <script src="vendor/supabase.js"></script>
+    <script src="vendor/html2canvas.min.js"></script>
+    <script src="assets/app.js" defer></script>
+</head>
+<body>
+
+<!-- ==================== 登录 / 注册 ==================== -->
+<div class="auth-wrap" id="authWrap" hidden>
+    <div class="auth-card">
+        <div class="auth-logo">🚗</div>
+        <h2>施工单 Pro</h2>
+        <p class="auth-sub">与原系统同一套云端数据，账号通用</p>
+
+        <div class="auth-tabs">
+            <div class="auth-tab is-active" data-tab="login">登录</div>
+            <div class="auth-tab" data-tab="register">注册</div>
+        </div>
+
+        <div id="loginForm">
+            <label class="field">
+                <span>账号</span>
+                <input type="text" id="loginUser" placeholder="输入账号" maxlength="20" autocomplete="username">
+            </label>
+            <label class="field">
+                <span>密码</span>
+                <input type="password" id="loginPass" placeholder="输入密码" maxlength="72" autocomplete="current-password">
+            </label>
+            <button class="btn btn-primary btn-block" id="btnLogin">登 录</button>
+            <div class="auth-msg" id="loginMsg"></div>
+        </div>
+
+        <div id="registerForm" hidden>
+            <label class="field">
+                <span>账号</span>
+                <input type="text" id="regUser" placeholder="字母/数字，2-20 位" maxlength="20" autocomplete="username">
+            </label>
+            <label class="field">
+                <span>密码</span>
+                <input type="password" id="regPass" placeholder="至少 6 位" maxlength="72" autocomplete="new-password">
+            </label>
+            <button class="btn btn-primary btn-block" id="btnRegister">注 册</button>
+            <div class="auth-msg" id="regMsg"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== 主系统 ==================== -->
+<div class="app" id="appWrap" hidden>
+
+    <header class="topbar no-print">
+        <div class="topbar-left">
+            <div class="brand">🚗 施工单 Pro</div>
+            <div class="brand-sub" id="brandSub">云端同步</div>
+        </div>
+        <button class="btn-ghost" id="btnLogout">退出</button>
+    </header>
+
+    <main class="main">
+        <!-- ---------- 开单 ---------- -->
+        <section class="view" id="view-create">
+            <div class="card">
+                <div class="card-title">车辆信息</div>
+                <button class="btn btn-ai btn-block" id="btnAi">📷 AI 拍照识别车牌 / 车型</button>
+
+                <label class="field">
+                    <span>车牌号</span>
+                    <input type="text" id="carPlate" placeholder="例如：川C·D61785" maxlength="20">
+                </label>
+                <label class="field">
+                    <span>车型</span>
+                    <input type="text" id="carModel" placeholder="例如：吉利几何、保时捷" maxlength="40">
+                </label>
+                <div class="field-row">
+                    <label class="field">
+                        <span>车主电话</span>
+                        <input type="tel" id="custPhone" placeholder="选填" maxlength="20">
+                    </label>
+                    <label class="field">
+                        <span>施工日期</span>
+                        <input type="date" id="workDate">
+                    </label>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">添加施工项目</div>
+                <div class="chips" id="presetBox"></div>
+
+                <label class="field">
+                    <span>大类</span>
+                    <select id="itemCategory"></select>
+                </label>
+                <div class="field-row">
+                    <label class="field">
+                        <span>品牌</span>
+                        <input type="text" id="itemBrand" placeholder="威固 / 龙膜" maxlength="40">
+                    </label>
+                    <label class="field">
+                        <span>施工部位</span>
+                        <input type="text" id="itemPart" placeholder="前挡 / 全车" maxlength="40">
+                    </label>
+                </div>
+                <div class="field-row">
+                    <label class="field">
+                        <span>价格</span>
+                        <input type="number" id="itemPrice" placeholder="0" inputmode="decimal" min="0" step="0.01">
+                    </label>
+                    <label class="field">
+                        <span>质保</span>
+                        <div class="field-inline">
+                            <input type="number" id="warrantyNum" value="5" min="0" step="1">
+                            <select id="warrantyUnit">
+                                <option value="年">年</option>
+                                <option value="个月">个月</option>
+                                <option value="终身">终身</option>
+                            </select>
+                        </div>
+                    </label>
+                </div>
+                <button class="btn btn-blue btn-block" id="btnAddItem">＋ 加入清单</button>
+
+                <div class="divider"></div>
+                <div class="card-title">施工清单 <span class="badge" id="itemCount">0</span></div>
+                <div class="empty" id="emptyTip">暂无项目，可从上方常用模板一键添加</div>
+                <div id="itemList" class="item-list"></div>
+                <div class="total-line" id="totalBox" hidden>合计：<b id="totalAmount">￥0</b></div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">施工照片 <span class="hint">前 3 张为施工前，后 3 张为施工后</span></div>
+                <div class="photo-grid" id="photoGrid"></div>
+            </div>
+
+            <div class="card">
+                <label class="field">
+                    <span>备注</span>
+                    <textarea id="remark" rows="2" maxlength="200" placeholder="选填，会出现在施工单上"></textarea>
+                </label>
+                <label class="check-line">
+                    <input type="checkbox" id="deductStock">
+                    <span>保存时按项目自动扣减耗材库存</span>
+                </label>
+                <button class="btn btn-amber btn-block btn-lg" id="btnSave">💾 保存到云端</button>
+                <div class="row-2">
+                    <button class="btn btn-outline" id="btnReset">清空重填</button>
+                    <button class="btn btn-outline" id="btnDraft">保存草稿</button>
+                </div>
+                <div class="draft-tip" id="draftTip" hidden></div>
+            </div>
+        </section>
+
+        <!-- ---------- 记录 ---------- -->
+        <section class="view" id="view-orders" hidden>
+            <div class="card">
+                <div class="search-bar">
+                    <input type="search" id="orderSearch" placeholder="搜索车牌 / 车型 / 项目">
+                    <select id="orderRange">
+                        <option value="all">全部</option>
+                        <option value="month">本月</option>
+                        <option value="week">近 7 天</option>
+                    </select>
+                </div>
+                <div class="row-2">
+                    <button class="btn btn-outline" id="btnReloadOrders">🔄 刷新</button>
+                    <button class="btn btn-violet" id="btnExport">📸 导出汇总图</button>
+                </div>
+            </div>
+            <div id="orderList" class="order-list"></div>
+        </section>
+
+        <!-- ---------- 库存 ---------- -->
+        <section class="view" id="view-stock" hidden>
+            <div class="card">
+                <div class="card-title">耗材库存 <span class="hint" id="stockMode">本地</span></div>
+                <div id="stockList" class="stock-list"></div>
+                <div class="row-2">
+                    <button class="btn btn-outline" id="btnAddStock">＋ 新增耗材</button>
+                    <button class="btn btn-blue" id="btnSyncStock">☁️ 同步云端</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ---------- 统计 ---------- -->
+        <section class="view" id="view-stats" hidden>
+            <div class="card">
+                <div class="card-title">经营概览</div>
+                <div class="stat-grid" id="statGrid"></div>
+            </div>
+            <div class="card">
+                <div class="card-title">项目大类分布</div>
+                <div id="catStats" class="bar-chart"></div>
+            </div>
+            <div class="card">
+                <div class="card-title">近 7 天营业额</div>
+                <div id="dayStats" class="bar-chart"></div>
+            </div>
+        </section>
+    </main>
+
+    <nav class="tabbar no-print">
+        <button class="tab is-active" data-view="create"><i>📝</i><span>开单</span></button>
+        <button class="tab" data-view="orders"><i>📂</i><span>记录</span></button>
+        <button class="tab" data-view="stock"><i>📦</i><span>库存</span></button>
+        <button class="tab" data-view="stats"><i>📊</i><span>统计</span></button>
+    </nav>
+</div>
+
+<!-- ==================== 弹层 ==================== -->
+<div class="mask" id="detailMask" hidden>
+    <div class="modal">
+        <div class="modal-head no-print">
+            <span>施工单详情</span>
+            <button class="btn-ghost" id="btnCloseDetail">关闭</button>
+        </div>
+        <div class="print-area" id="printArea">
+            <div class="sheet-title">车 辆 施 工 单</div>
+            <div class="sheet-head">
+                <div>
+                    <div class="sheet-plate" id="dPlate">未填写车牌</div>
+                    <div class="sheet-model" id="dModel"></div>
+                </div>
+                <div class="sheet-meta">
+                    <div>施工时间：<span id="dTime"></span></div>
+                    <div>车主电话：<span id="dPhone">—</span></div>
+                </div>
+            </div>
+            <div id="dItems" class="sheet-items"></div>
+            <div class="sheet-remark" id="dRemark" hidden></div>
+            <div class="sheet-total">合计金额：<b id="dTotal">￥0</b></div>
+            <div class="sheet-sign">
+                <span>客户签字：____________</span>
+                <span>技师签字：____________</span>
+            </div>
+            <div id="dPhotos" class="photo-grid"></div>
+        </div>
+        <div class="row-2 no-print">
+            <button class="btn btn-green" id="btnPrintDoc">🖨️ 打印</button>
+            <button class="btn btn-outline" id="btnPrintText">📋 复制文本</button>
+        </div>
+        <div class="row-2 no-print">
+            <button class="btn btn-danger-ghost" id="btnDelOrder">🗑 删除该单</button>
+            <button class="btn btn-outline" id="btnBackToList">返回列表</button>
+        </div>
+    </div>
+</div>
+
+<div class="mask" id="printMask" hidden>
+    <div class="modal">
+        <div class="modal-head">
+            <span>订单文本（可直接发微信）</span>
+            <button class="btn-ghost" id="btnClosePrint">关闭</button>
+        </div>
+        <textarea class="text-area" id="printText" readonly></textarea>
+        <button class="btn btn-blue btn-block" id="btnCopyText">📋 复制</button>
+    </div>
+</div>
+
+<div class="lightbox" id="lightbox" hidden><img id="lightboxImg" alt="预览"></div>
+
+<div class="mask" id="alertMask" hidden>
+    <div class="alert-box">
+        <p id="alertText"></p>
+        <button class="btn btn-primary" id="btnAlertOk">确定</button>
+    </div>
+</div>
+
+<div class="mask" id="confirmMask" hidden>
+    <div class="alert-box">
+        <p id="confirmText"></p>
+        <div class="row-2">
+            <button class="btn btn-outline" id="btnConfirmNo">取消</button>
+            <button class="btn btn-danger" id="btnConfirmYes">确定</button>
+        </div>
+    </div>
+</div>
+
+<input type="file" id="aiFile" accept="image/*" capture="environment" hidden>
+<input type="file" id="photoFile" accept="image/*" hidden>
+
+</body>
+</html>
